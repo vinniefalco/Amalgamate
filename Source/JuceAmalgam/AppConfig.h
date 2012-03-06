@@ -1,0 +1,1 @@
+// Configures the Juce library.

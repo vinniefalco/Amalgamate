@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\Source\Amalgamate.cpp" />
+    <ClCompile Include="..\..\Source\JuceAmalgam\juce_core_amalgam.cpp">
+      <Filter>JuceAmalgam</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="JuceAmalgam">
+      <UniqueIdentifier>{b220f03e-f152-4d88-af71-af80f399b9c9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
