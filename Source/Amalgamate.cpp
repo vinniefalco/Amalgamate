@@ -282,8 +282,24 @@ private:
       }
       else if (removed.startsWithIgnoreCase ("#include"))
       {
-        String name = line.fromFirstOccurrenceOf ("#include", false, false).trim ();
+        String name;
+
+#if 1 
+        if (line.contains ("/*"))
+          name = line.fromFirstOccurrenceOf ("#include", false, false)
+                     .upToFirstOccurrenceOf ("/*", false, false).trim ();
+        else
+          name = line.fromFirstOccurrenceOf ("#include", false, false).trim ();
+
+        parsed.endOfInclude = line.upToFirstOccurrenceOf (name, true, false).length ();
+#else
+        name = line.fromFirstOccurrenceOf ("#include", false, false).trim ();
+#endif
+
         String value = m_macrosDefined [name];
+
+        if (m_verbose)
+          std::cout << "name = " << name << "\n";
 
         if (value.startsWithIgnoreCase ("\""))
         {
@@ -648,6 +664,10 @@ int main (int argc, char* argv[])
         error = true;
         break;
       }
+    }
+    else if (option.compareIgnoreCase ("-v") == 0)
+    {
+      amalgamator.setVerbose ();
     }
     else if (option.startsWith ("-"))
     {
