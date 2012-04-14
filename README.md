@@ -18,7 +18,7 @@ rather than needing to be built separately by build tools. Here are some
 examples of source code libraries that have been amalgamated:
 
 - **[FreeType][1]** http://github.com/vinniefalco/FreeTypeAmalgam
-- **[JUCE][2]** http://github.com/vinniefalco/JuceAmalgam
+- **[JUCE][2]** http://github.com/vinniefalco/JUCEAmalgam
 - **[TagLib][3]** http://github.com/vinniefalco/TagLibAmalgam
 
 ## License
