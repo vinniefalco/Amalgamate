@@ -21,16 +21,11 @@ examples of source code libraries that have been amalgamated:
 - **[JUCE][2]** http://github.com/vinniefalco/JuceAmalgam
 - **[TagLib][3]** http://github.com/vinniefalco/TagLibAmalgam
 
-## Author
-
-Amalgamate is written by Vinnie Falco. It is based on the original JUCE
-amalgamator tool, with added features to support broader usage.
-
 ## License
 
 Copyright (C) 2012 [Vinnie Falco][4]<br>
 Amalgamate is provided under the terms of the [MIT license][5].<br>
-Amalgamate uses portions of [JUCE][1], which is licensed separately.
+Amalgamate uses portions of [JUCE][1], licensed separately.
 
 [1]: http://www.freetype.org "The FreeType Project"
 [2]: http://rawmaterialsoftware.com/juce.php "JUCE"
