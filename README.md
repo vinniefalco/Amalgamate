@@ -24,7 +24,7 @@ amalgamator tool, with added features to support broader usage.
 
 Copyright (C) 2012 Vinnie Falco<br>
 Amalgamate is provided under the terms of the [MIT license][3].<br>
-Amalgamate uses portions of [Juce][02], which is licensed separately.
+Amalgamate uses portions of [Juce][2], which is licensed separately.
 
 [1]: http://vinniefalco.com "Vinnie Falco's Home Page"
 [2]: http://rawmaterialsoftware.com/juce.php "JUCE"
