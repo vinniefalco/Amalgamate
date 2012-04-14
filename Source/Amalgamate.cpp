@@ -15,13 +15,110 @@ http://www.gnu.org/licenses
 ==============================================================================
 */
 
+#include <regex>
+#include <unordered_map>
+
 #include "JuceAmalgam/JuceHeader.h"
 
-/******************************************************************************/
+//==============================================================================
 
+/* Handles the @remap directive for redirecting includes to amalgamated files.
+*/
+class RemapTable : public std::unordered_map <std::string, std::string>
+{
+public:
+  RemapTable () : m_pattern (
+    "[ \t]*/\\*[ \t]*@remap[ \t]+\"([^\"]+)\"[ \t]+\"([^\"]+)\"[ \t]*\\*/[ \t]*")
+  {
+  }
+
+  // Returns true if the line was a @remap directive
+  //
+  bool processLine (std::string const& line)
+  {
+    bool wasRemap = false;
+
+    std::match_results <std::string::const_iterator> result;
+
+    if (std::regex_match (line, result, m_pattern))
+    {
+      const_iterator iter = find (result [1]);
+
+      if (iter == end ())
+      {
+        this->operator[] (result[1]) = result[2];
+      }
+      else
+      {
+        std::cout << "Warning: duplicate @remap directive" << std::endl;
+      }
+      
+      wasRemap = true;
+    }
+
+    return wasRemap;
+  }
+
+private:
+  std::regex m_pattern;
+  std::unordered_map <std::string, std::string> m_value;
+};
+
+//==============================================================================
+
+/* Handles #include lines.
+*/
+class IncludeProcessor
+{
+public:
+  IncludeProcessor ()
+    : m_includePattern ("[ \t]*#include[ \t]+(.*)[ t]*")
+    , m_macroPattern ("([_a-zA-Z][_0-9a-zA-Z]*)")
+    , m_anglePattern ("<([^>]+)>.*")
+    , m_quotePattern ("\"([^\"]+)\".*")
+  {
+
+  }
+
+  void processLine (std::string const& line)
+  {
+    std::match_results <std::string::const_iterator> r1;
+
+    if (std::regex_match (line, r1, m_includePattern))
+    {
+      std::string s (r1[1]);
+
+      std::match_results <std::string::const_iterator> r2;
+
+      if (std::regex_match (s, r2, m_macroPattern))
+      {
+        // r2[1] holds the macro
+      }
+      else if (std::regex_match (s, r2, m_anglePattern))
+      {
+        // std::cout << "\"" << r2[1] << "\" ";
+      }
+      else if (std::regex_match (s, r2, m_quotePattern))
+      {
+        // std::cout << "\"" << r2[1] << "\" ";
+      }
+    }
+  }
+
+private:
+  std::regex m_includePattern;
+  std::regex m_macroPattern;
+  std::regex m_anglePattern;
+  std::regex m_quotePattern;
+};
+
+//==============================================================================
 class Amalgamator
 {
 public:
+  RemapTable m_remapTable;
+  IncludeProcessor m_includeProcessor;
+
   explicit Amalgamator (String toolName)
     : m_name (toolName)
     , m_verbose (false)
@@ -90,6 +187,8 @@ public:
   {
     bool error = false;
 
+    // Make sure the template file exists
+
     if (! m_templateFile.existsAsFile())
     {
       std::cout << name () << " The template file doesn't exist!\n\n";
@@ -98,6 +197,8 @@ public:
 
     if (!error)
     {
+      // Prepare to write output to a temporary file.
+
       std::cout << "  Building: " << m_targetFile.getFullPathName() << "...\n";
 
       TemporaryFile temp (m_targetFile);
@@ -335,20 +436,28 @@ private:
     int level,
     bool stripCommentBlocks)
   {
+    // Make sure the file exists
+
     if (! file.exists())
     {
       std::cout << "  !! ERROR - file doesn't exist!";
       return false;
     }
 
+    // Load the entire file as an array of individual lines.
+
     StringArray lines;
     lines.addLines (file.loadFileAsString());
+
+    // Make sure there is something in the file.
 
     if (lines.size() == 0)
     {
       std::cout << "  !! ERROR - input file was empty: " << file.getFullPathName();
       return false;
     }
+
+    // Produce some descriptive progress.
 
     if (m_verbose)
     {
@@ -369,57 +478,73 @@ private:
       if ((level != 0) && trimmed.startsWith ("//================================================================"))
         line = String::empty;
 
-      ParsedInclude parsedInclude = parseInclude (line, trimmed);
+      std::string s (line.toUTF8 ());
 
-      if (parsedInclude.isIncludeLine)
+      if (m_remapTable.processLine (s))
       {
-        const File targetFile = findInclude (file, parsedInclude.filename);
+        line = String::empty;
+      }
+      else
+      {
+        ParsedInclude parsedInclude = parseInclude (line, trimmed);
 
-        if (targetFile.exists())
+        if (parsedInclude.isIncludeLine)
         {
-          if (matchesWildcard (parsedInclude.filename.replaceCharacter ('\\', '/'))
-            && ! includesToIgnore.contains (targetFile.getFileName()))
+          const File targetFile = findInclude (file, parsedInclude.filename);
+
+          if (targetFile.exists())
           {
-            if (line.containsIgnoreCase ("FORCE_AMALGAMATOR_INCLUDE")
-              || ! alreadyIncludedFiles.contains (targetFile.getFullPathName()))
+            if (matchesWildcard (parsedInclude.filename.replaceCharacter ('\\', '/'))
+              && ! includesToIgnore.contains (targetFile.getFileName()))
             {
-              if (parsedInclude.preventReinclude)
+              String fileNamePart = File (parsedInclude.filename).getFileName ();
+              RemapTable::iterator remapTo = m_remapTable.find (std::string (fileNamePart.toUTF8 ()));
+              if (level != 0 && remapTo != m_remapTable.end ())
               {
-                alreadyIncludedFiles.add (targetFile.getFullPathName());
+                line = "#include \"";
+                line << String(remapTo->second.c_str ()) << "\"" << newLine;
               }
-              else if (parsedInclude.forceReinclude)
+              else if (line.containsIgnoreCase ("FORCE_AMALGAMATOR_INCLUDE")
+                || ! alreadyIncludedFiles.contains (targetFile.getFullPathName()))
               {
+                if (parsedInclude.preventReinclude)
+                {
+                  alreadyIncludedFiles.add (targetFile.getFullPathName());
+                }
+                else if (parsedInclude.forceReinclude)
+                {
+                }
+                else if (! canFileBeReincluded (targetFile))
+                {
+                  alreadyIncludedFiles.add (targetFile.getFullPathName());
+                }
+
+                dest << newLine << "/*** Start of inlined file: " << targetFile.getFileName() << " ***/" << newLine;
+
+                if (! parseFile (rootFolder, newTargetFile,
+                  dest, targetFile, alreadyIncludedFiles, includesToIgnore,
+                  wildcards, level + 1, stripCommentBlocks))
+                {
+                  return false;
+                }
+
+                dest << "/*** End of inlined file: " << targetFile.getFileName() << " ***/" << newLine << newLine;
+
+                line = parsedInclude.lineAfterInclude;
               }
-              else if (! canFileBeReincluded (targetFile))
+              else
               {
-                alreadyIncludedFiles.add (targetFile.getFullPathName());
+                line = String::empty;
               }
-
-              dest << newLine << "/*** Start of inlined file: " << targetFile.getFileName() << " ***/" << newLine;
-
-              if (! parseFile (rootFolder, newTargetFile,
-                dest, targetFile, alreadyIncludedFiles, includesToIgnore,
-                wildcards, level + 1, stripCommentBlocks))
-              {
-                return false;
-              }
-
-              dest << "/*** End of inlined file: " << targetFile.getFileName() << " ***/" << newLine << newLine;
-
-              line = parsedInclude.lineAfterInclude;
             }
             else
             {
-              line = String::empty;
+              line = parsedInclude.lineUpToEndOfInclude.upToFirstOccurrenceOf ("\"", true, false)
+                + targetFile.getRelativePathFrom (newTargetFile.getParentDirectory())
+                .replaceCharacter ('\\', '/')
+                + "\""
+                + parsedInclude.lineAfterInclude;
             }
-          }
-          else
-          {
-            line = parsedInclude.lineUpToEndOfInclude.upToFirstOccurrenceOf ("\"", true, false)
-              + targetFile.getRelativePathFrom (newTargetFile.getParentDirectory())
-              .replaceCharacter ('\\', '/')
-              + "\""
-              + parsedInclude.lineAfterInclude;
           }
         }
       }
