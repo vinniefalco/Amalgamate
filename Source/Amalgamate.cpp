@@ -18,7 +18,9 @@ http://www.gnu.org/licenses
 #include <regex>
 #include <unordered_map>
 
-#include "JuceAmalgam/JuceHeader.h"
+#include "JuceAmalgam/juce_core_amalgam.h"
+
+using namespace juce;
 
 //==============================================================================
 
