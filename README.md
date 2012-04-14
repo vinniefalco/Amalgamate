@@ -25,7 +25,7 @@ examples of source code libraries that have been amalgamated:
 
 Copyright (C) 2012 [Vinnie Falco][4]<br>
 Amalgamate is provided under the terms of the [MIT license][5].<br>
-Amalgamate uses portions of [JUCE][1], licensed separately.
+Amalgamate uses portions of [JUCE][2], licensed separately.
 
 [1]: http://www.freetype.org "The FreeType Project"
 [2]: http://rawmaterialsoftware.com/juce.php "JUCE"
