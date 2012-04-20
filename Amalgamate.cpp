@@ -60,6 +60,8 @@ public:
       if (iter == end ())
       {
         this->operator[] (result[1]) = result[2];
+
+        //std::cout << "@remap " << result[1] << " to " << result[2] << std::endl;
       }
       else
       {
@@ -352,6 +354,30 @@ private:
     return result;
   }
 
+  void findAllFilesIncludedIn (const File& hppTemplate, StringArray& alreadyIncludedFiles)
+  {
+    StringArray lines;
+    lines.addLines (hppTemplate.loadFileAsString());
+
+    for (int i = 0; i < lines.size(); ++i)
+    {
+      String line (lines[i]);
+
+      if (line.removeCharacters (" \t").startsWithIgnoreCase ("#include\""))
+      {
+        const String filename (line.fromFirstOccurrenceOf ("\"", false, false)
+          .upToLastOccurrenceOf ("\"", false, false));
+        const File targetFile (findInclude (hppTemplate, filename));
+
+        if (! alreadyIncludedFiles.contains (targetFile.getFullPathName()))
+        {
+          alreadyIncludedFiles.add (targetFile.getFullPathName());
+
+          findAllFilesIncludedIn (targetFile, alreadyIncludedFiles);
+        }
+      }
+    }
+  }
   struct ParsedInclude
   {
     ParsedInclude ()
@@ -516,6 +542,8 @@ private:
               {
                 line = "#include \"";
                 line << String(remapTo->second.c_str ()) << "\"" << newLine;
+
+                findAllFilesIncludedIn (targetFile, alreadyIncludedFiles);
               }
               else if (line.containsIgnoreCase ("FORCE_AMALGAMATOR_INCLUDE")
                 || ! alreadyIncludedFiles.contains (targetFile.getFullPathName()))
@@ -651,32 +679,6 @@ private:
 };
 
 /******************************************************************************/
-
-static void findAllFilesIncludedIn (const File& hppTemplate, StringArray& alreadyIncludedFiles)
-{
-  StringArray lines;
-  lines.addLines (hppTemplate.loadFileAsString());
-
-  for (int i = 0; i < lines.size(); ++i)
-  {
-    String line (lines[i]);
-
-    if (line.removeCharacters (" \t").startsWithIgnoreCase ("#include\""))
-    {
-      const String filename (line.fromFirstOccurrenceOf ("\"", false, false)
-        .upToLastOccurrenceOf ("\"", false, false));
-      const File targetFile (hppTemplate.getSiblingFile (filename));
-
-      if (! alreadyIncludedFiles.contains (targetFile.getFullPathName()))
-      {
-        alreadyIncludedFiles.add (targetFile.getFullPathName());
-
-        if (targetFile.getFileName().containsIgnoreCase ("juce_") && targetFile.exists())
-          findAllFilesIncludedIn (targetFile, alreadyIncludedFiles);
-      }
-    }
-  }
-}
 
 //==============================================================================
 int main (int argc, char* argv[])
