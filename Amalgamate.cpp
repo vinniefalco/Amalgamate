@@ -67,7 +67,7 @@ public:
       {
         std::cout << "Warning: duplicate @remap directive" << std::endl;
       }
-      
+
       wasRemap = true;
     }
 
@@ -424,7 +424,7 @@ private:
       {
         String name;
 
-#if 1 
+#if 1
         if (line.contains ("/*"))
           name = line.fromFirstOccurrenceOf ("#include", false, false)
                      .upToFirstOccurrenceOf ("/*", false, false).trim ();
@@ -560,7 +560,7 @@ private:
                   alreadyIncludedFiles.add (targetFile.getFullPathName());
                 }
 
-                dest << newLine << "/*** Start of inlined file: " << targetFile.getFileName() << " ***/" << newLine;
+                dest << newLine << "#line 1 \"" << targetFile.getFileName() << "\"" << newLine;
 
                 if (! parseFile (rootFolder, newTargetFile,
                   dest, targetFile, alreadyIncludedFiles, includesToIgnore,
@@ -568,8 +568,6 @@ private:
                 {
                   return false;
                 }
-
-                dest << "/*** End of inlined file: " << targetFile.getFileName() << " ***/" << newLine << newLine;
 
                 line = parsedInclude.lineAfterInclude;
               }
