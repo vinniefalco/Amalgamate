@@ -26,7 +26,17 @@
   ==============================================================================
 */
 
+#ifdef USE_BOOST_REGEX
+#include <boost/regex.hpp>
+using boost::regex;
+using boost::regex_match;
+using boost::match_results;
+#else
 #include <regex>
+using std::regex;
+using std::regex_match;
+using std::match_results;
+#endif
 #include <unordered_map>
 
 #include "juce_core_amalgam.h"
@@ -51,9 +61,9 @@ public:
   {
     bool wasRemap = false;
 
-    std::match_results <std::string::const_iterator> result;
+    match_results <std::string::const_iterator> result;
 
-    if (std::regex_match (line, result, m_pattern))
+    if (regex_match (line, result, m_pattern))
     {
       const_iterator iter = find (result [1]);
 
@@ -75,7 +85,7 @@ public:
   }
 
 private:
-  std::regex m_pattern;
+  regex m_pattern;
   std::unordered_map <std::string, std::string> m_value;
 };
 
@@ -97,23 +107,23 @@ public:
 
   void processLine (std::string const& line)
   {
-    std::match_results <std::string::const_iterator> r1;
+    match_results <std::string::const_iterator> r1;
 
-    if (std::regex_match (line, r1, m_includePattern))
+    if (regex_match (line, r1, m_includePattern))
     {
       std::string s (r1[1]);
 
-      std::match_results <std::string::const_iterator> r2;
+      match_results <std::string::const_iterator> r2;
 
-      if (std::regex_match (s, r2, m_macroPattern))
+      if (regex_match (s, r2, m_macroPattern))
       {
         // r2[1] holds the macro
       }
-      else if (std::regex_match (s, r2, m_anglePattern))
+      else if (regex_match (s, r2, m_anglePattern))
       {
         // std::cout << "\"" << r2[1] << "\" ";
       }
-      else if (std::regex_match (s, r2, m_quotePattern))
+      else if (regex_match (s, r2, m_quotePattern))
       {
         // std::cout << "\"" << r2[1] << "\" ";
       }
@@ -121,10 +131,10 @@ public:
   }
 
 private:
-  std::regex m_includePattern;
-  std::regex m_macroPattern;
-  std::regex m_anglePattern;
-  std::regex m_quotePattern;
+  regex m_includePattern;
+  regex m_macroPattern;
+  regex m_anglePattern;
+  regex m_quotePattern;
 };
 
 //==============================================================================
