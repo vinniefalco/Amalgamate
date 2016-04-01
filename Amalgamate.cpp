@@ -325,6 +325,8 @@ private:
     bool result;
     if (l1.replace ("#ifndef", "#define") == l2)
       result = false;
+    else if (l1 == "#pragmaonce")
+      result = false;
     else
       result = true;
 
