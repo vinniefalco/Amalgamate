@@ -140,7 +140,7 @@ public:
     , m_checkSystemIncludes (false)
     , m_tabs (false)
   {
-    setWildcards ("*.cpp;*.c;*.h;*.hpp;*.mm;*.m");
+    setWildcards ("*.cpp;*.c;*.h;*.hpp");
   }
 
   const String name () const
@@ -906,7 +906,7 @@ int main (int argc, char* argv[])
     std::cout << "  " << "\n";
     std::cout << "    -w {wildcards}    Specify a comma separated list of file name patterns to" << "\n";
     std::cout << "                      match when deciding to inline (assuming the file can be" << "\n";
-    std::cout << "                      located). The default setting is \"*.cpp;*.c;*.h;*.hpp;*.mm;*.m\"." << "\n";
+    std::cout << "                      located). The default setting is \"*.cpp;*.c;*.h;*.hpp\"." << "\n";
     std::cout << "  " << "\n";
     std::cout << "    -f {file|macro}   Force reinclusion of the specified file or macro on" << "\n";
     std::cout << "                      all appearances in #include lines." << "\n";
