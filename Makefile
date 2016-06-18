@@ -35,7 +35,7 @@ usage:
 
 $(BIN): $(SRCS) $(INCS)
 	@$(ECHO) $(B)"Build $@"$(b)
-	g++ $(CXX_FLAGS) $(CPP_FLAGS) $(SRCS) -o $@ $(OBJS) $(LIBS)
+	g++ $(CXX_FLAGS) $(CPP_FLAGS) $(SRCS) -o $@ $(LIBS)
 
 clean:
 	rm -rf core $(BIN)
