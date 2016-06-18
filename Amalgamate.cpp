@@ -430,7 +430,6 @@ private:
       {
         String name;
 
-#if 1 
         if (line.contains ("/*"))
           name = line.fromFirstOccurrenceOf ("#include", false, false)
                      .upToFirstOccurrenceOf ("/*", false, false).trim ();
@@ -438,9 +437,6 @@ private:
           name = line.fromFirstOccurrenceOf ("#include", false, false).trim ();
 
         parsed.endOfInclude = line.upToFirstOccurrenceOf (name, true, false).length ();
-#else
-        name = line.fromFirstOccurrenceOf ("#include", false, false).trim ();
-#endif
 
         String value = m_macrosDefined [name];
 
@@ -649,15 +645,6 @@ private:
           line = String::repeatedString ("\t", numTabs) + line.substring (numTabs * tabSize);
         }
 
-  #if 0
-        if (! line.containsChar ('"'))
-        {
-          // turn large areas of spaces into tabs - this will mess up alignment a bit, but
-          // it's only the amalgamated file, so doesn't matter...
-          line = line.replace ("        ", "\t", false);
-          line = line.replace ("    ", "\t", false);
-        }
-  #endif
       }
 
       if (line.isNotEmpty() || ! lastLineWasBlank)
