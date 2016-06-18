@@ -206,63 +206,59 @@ public:
 
   bool process ()
   {
-    bool error = false;
+    // return true in case of error
 
     // Make sure the template file exists
-
     if (! m_templateFile.existsAsFile())
     {
       std::cout << name () << " The template file doesn't exist!\n\n";
-      error = true;
+      return true;
     }
 
-    if (!error)
+    // Prepare to write output to a temporary file.
+
+    std::cout << "  Building: " << m_targetFile.getFullPathName() << "...\n";
+
+    TemporaryFile temp (m_targetFile);
+    ScopedPointer <FileOutputStream> out (temp.getFile().createOutputStream (1024 * 128));
+
+    if (out == 0)
     {
-      // Prepare to write output to a temporary file.
-
-      std::cout << "  Building: " << m_targetFile.getFullPathName() << "...\n";
-
-      TemporaryFile temp (m_targetFile);
-      ScopedPointer <FileOutputStream> out (temp.getFile().createOutputStream (1024 * 128));
-
-      if (out == 0)
-      {
-        std::cout << "  \n!! ERROR - couldn't write to the target file: "
-          << temp.getFile().getFullPathName() << "\n\n";
-        return false;
-      }
-
-      out->setNewLineString ("\n");
-
-      if (! parseFile (m_targetFile.getParentDirectory(),
-        m_targetFile,
-        *out,
-        m_templateFile,
-        m_alreadyIncludedFiles,
-        m_includesToIgnore,
-        m_wildcards,
-        0, false))
-      {
-        return false;
-      }
-
-      out = 0;
-
-      if (calculateFileHashCode (m_targetFile) == calculateFileHashCode (temp.getFile()))
-      {
-        std::cout << "   -- No need to write - new file is identical\n";
-        return true;
-      }
-
-      if (! temp.overwriteTargetFileWithTemporary())
-      {
-        std::cout << "  \n!! ERROR - couldn't write to the target file: "
-          << m_targetFile.getFullPathName() << "\n\n";
-        return false;
-      }
+      std::cout << "  \n!! ERROR - couldn't write to the target file: "
+        << temp.getFile().getFullPathName() << "\n\n";
+      return false;
     }
 
-    return error;
+    out->setNewLineString ("\n");
+
+    if (! parseFile (m_targetFile.getParentDirectory(),
+      m_targetFile,
+      *out,
+      m_templateFile,
+      m_alreadyIncludedFiles,
+      m_includesToIgnore,
+      m_wildcards,
+      0, false))
+    {
+      return false;
+    }
+
+    out = 0;
+
+    if (calculateFileHashCode (m_targetFile) == calculateFileHashCode (temp.getFile()))
+    {
+      std::cout << "   -- No need to write - new file is identical\n";
+      return false;
+    }
+
+    if (! temp.overwriteTargetFileWithTemporary())
+    {
+      std::cout << "  \n!! ERROR - couldn't write to the target file: "
+        << m_targetFile.getFullPathName() << "\n\n";
+      return true;
+    }
+
+    return false;
   }
 
 public:
