@@ -23,12 +23,12 @@ examples of source code libraries that have been amalgamated:
 
 ## License
 
-Copyright (C) 2012 [Vinnie Falco][4]<br>
-Amalgamate is provided under the terms of the [MIT license][5].<br>
+Copyright (C) 2012 [Vinnie Falco]<br>
+Copyright (C) 2016 [Xavier Lamorlette]<br>
+Amalgamate is provided under the terms of the [MIT license][3].<br>
 Amalgamate uses portions of [JUCE][2], licensed separately.
 
 [1]: http://www.freetype.org "The FreeType Project"
 [2]: http://rawmaterialsoftware.com/juce.php "JUCE"
 [3]: http://developer.kde.org/~wheeler/taglib.html "TagLib"
-[4]: http://vinniefalco.com "Vinnie Falco's Home Page"
-[5]: http://www.opensource.org/licenses/MIT "MIT License"
+[4]: http://www.opensource.org/licenses/MIT "MIT License"

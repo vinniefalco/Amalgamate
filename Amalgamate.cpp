@@ -138,8 +138,9 @@ public:
     : m_name (toolName)
     , m_verbose (false)
     , m_checkSystemIncludes (false)
+    , m_tabs (false)
   {
-    setWildcards ("*.cpp;*.c;*.h;*.mm;*.m");
+    setWildcards ("*.cpp;*.c;*.h;*.hpp");
   }
 
   const String name () const
@@ -176,6 +177,11 @@ public:
     m_verbose = true;
   }
 
+  void setConvertSpacesToTabs ()
+  {
+    m_tabs = true;
+  }
+
   void addDirectoryToSearch (String directoryToSearch)
   {
     File dir (directoryToSearch);
@@ -200,63 +206,59 @@ public:
 
   bool process ()
   {
-    bool error = false;
+    // return true in case of error
 
     // Make sure the template file exists
-
     if (! m_templateFile.existsAsFile())
     {
       std::cout << name () << " The template file doesn't exist!\n\n";
-      error = true;
+      return true;
     }
 
-    if (!error)
+    // Prepare to write output to a temporary file.
+
+    std::cout << "  Building: " << m_targetFile.getFullPathName() << "...\n";
+
+    TemporaryFile temp (m_targetFile);
+    ScopedPointer <FileOutputStream> out (temp.getFile().createOutputStream (1024 * 128));
+
+    if (out == 0)
     {
-      // Prepare to write output to a temporary file.
-
-      std::cout << "  Building: " << m_targetFile.getFullPathName() << "...\n";
-
-      TemporaryFile temp (m_targetFile);
-      ScopedPointer <FileOutputStream> out (temp.getFile().createOutputStream (1024 * 128));
-
-      if (out == 0)
-      {
-        std::cout << "  \n!! ERROR - couldn't write to the target file: "
-          << temp.getFile().getFullPathName() << "\n\n";
-        return false;
-      }
-
-      out->setNewLineString ("\n");
-
-      if (! parseFile (m_targetFile.getParentDirectory(),
-        m_targetFile,
-        *out,
-        m_templateFile,
-        m_alreadyIncludedFiles,
-        m_includesToIgnore,
-        m_wildcards,
-        0, false))
-      {
-        return false;
-      }
-
-      out = 0;
-
-      if (calculateFileHashCode (m_targetFile) == calculateFileHashCode (temp.getFile()))
-      {
-        std::cout << "   -- No need to write - new file is identical\n";
-        return true;
-      }
-
-      if (! temp.overwriteTargetFileWithTemporary())
-      {
-        std::cout << "  \n!! ERROR - couldn't write to the target file: "
-          << m_targetFile.getFullPathName() << "\n\n";
-        return false;
-      }
+      std::cout << "  \n!! ERROR - couldn't write to the target file: "
+        << temp.getFile().getFullPathName() << "\n\n";
+      return false;
     }
 
-    return error;
+    out->setNewLineString ("\n");
+
+    if (! parseFile (m_targetFile.getParentDirectory(),
+      m_targetFile,
+      *out,
+      m_templateFile,
+      m_alreadyIncludedFiles,
+      m_includesToIgnore,
+      m_wildcards,
+      0, false))
+    {
+      return false;
+    }
+
+    out = 0;
+
+    if (calculateFileHashCode (m_targetFile) == calculateFileHashCode (temp.getFile()))
+    {
+      std::cout << "   -- No need to write - new file is identical\n";
+      return false;
+    }
+
+    if (! temp.overwriteTargetFileWithTemporary())
+    {
+      std::cout << "  \n!! ERROR - couldn't write to the target file: "
+        << m_targetFile.getFullPathName() << "\n\n";
+      return true;
+    }
+
+    return false;
   }
 
 public:
@@ -424,7 +426,6 @@ private:
       {
         String name;
 
-#if 1 
         if (line.contains ("/*"))
           name = line.fromFirstOccurrenceOf ("#include", false, false)
                      .upToFirstOccurrenceOf ("/*", false, false).trim ();
@@ -432,9 +433,6 @@ private:
           name = line.fromFirstOccurrenceOf ("#include", false, false).trim ();
 
         parsed.endOfInclude = line.upToFirstOccurrenceOf (name, true, false).length ();
-#else
-        name = line.fromFirstOccurrenceOf ("#include", false, false).trim ();
-#endif
 
         String value = m_macrosDefined [name];
 
@@ -628,6 +626,7 @@ private:
 
       line = line.trimEnd();
 
+      if (m_tabs)
       {
         // Turn initial spaces into tabs..
         int numIntialSpaces = 0;
@@ -642,15 +641,6 @@ private:
           line = String::repeatedString ("\t", numTabs) + line.substring (numTabs * tabSize);
         }
 
-  #if 0
-        if (! line.containsChar ('"'))
-        {
-          // turn large areas of spaces into tabs - this will mess up alignment a bit, but
-          // it's only the amalgamated file, so doesn't matter...
-          line = line.replace ("        ", "\t", false);
-          line = line.replace ("    ", "\t", false);
-        }
-  #endif
       }
 
       if (line.isNotEmpty() || ! lastLineWasBlank)
@@ -666,6 +656,7 @@ private:
   const String m_name;
   bool m_verbose;
   bool m_checkSystemIncludes;
+  bool m_tabs;
   StringPairArray m_macrosDefined;
   StringArray m_wildcards;
   StringArray m_forceReincludes;
@@ -805,6 +796,10 @@ int main (int argc, char* argv[])
         break;
       }
     }
+    else if (option.compareIgnoreCase ("-t") == 0)
+    {
+      amalgamator.setConvertSpacesToTabs ();
+    }
     else if (option.compareIgnoreCase ("-v") == 0)
     {
       amalgamator.setVerbose ();
@@ -860,7 +855,7 @@ int main (int argc, char* argv[])
     std::cout << "  " << "\n";
     std::cout << "  SYNOPSIS" << "\n";
     std::cout << "  " << "\n";
-    std::cout << "   " << name << " [-s]" << "\n";
+    std::cout << "   " << name << " [-s] [-v] [-t]" << "\n";
     std::cout << "     [-w {wildcards}]" << "\n";
     std::cout << "     [-f {file|macro}]..." << "\n";
     std::cout << "     [-p {file|macro}]..." << "\n";
@@ -890,9 +885,11 @@ int main (int argc, char* argv[])
     std::cout << "    -s                Process #include lines containing angle brackets (i.e." << "\n";
     std::cout << "                      system includes). Normally these are not inlined." << "\n";
     std::cout << "  " << "\n";
+    std::cout << "    -t                Convert spaces into tabs." << "\n";
+    std::cout << "  " << "\n";
     std::cout << "    -w {wildcards}    Specify a comma separated list of file name patterns to" << "\n";
     std::cout << "                      match when deciding to inline (assuming the file can be" << "\n";
-    std::cout << "                      located). The default setting is \"*.cpp;*.c;*.h;*.mm;*.m\"." << "\n";
+    std::cout << "                      located). The default setting is \"*.cpp;*.c;*.h;*.hpp\"." << "\n";
     std::cout << "  " << "\n";
     std::cout << "    -f {file|macro}   Force reinclusion of the specified file or macro on" << "\n";
     std::cout << "                      all appearances in #include lines." << "\n";
