@@ -67,7 +67,7 @@ public:
       {
         std::cout << "Warning: duplicate @remap directive" << std::endl;
       }
-      
+
       wasRemap = true;
     }
 
@@ -87,7 +87,7 @@ class IncludeProcessor
 {
 public:
   IncludeProcessor ()
-    : m_includePattern ("[ \t]*#include[ \t]+(.*)[ t]*")
+    : m_includePattern ("[ \t]*#[ \t]*include[ \t]+(.*)[ t]*")
     , m_macroPattern ("([_a-zA-Z][_0-9a-zA-Z]*)")
     , m_anglePattern ("<([^>]+)>.*")
     , m_quotePattern ("\"([^\"]+)\".*")
@@ -424,7 +424,7 @@ private:
       {
         String name;
 
-#if 1 
+#if 1
         if (line.contains ("/*"))
           name = line.fromFirstOccurrenceOf ("#include", false, false)
                      .upToFirstOccurrenceOf ("/*", false, false).trim ();
@@ -483,6 +483,11 @@ private:
       return false;
     }
 
+    if( alreadyIncludedFiles.contains( file.getFileName() ) )
+    {
+      return true;
+    }
+
     // Load the entire file as an array of individual lines.
 
     StringArray lines;
@@ -527,7 +532,7 @@ private:
       {
         ParsedInclude parsedInclude = parseInclude (line, trimmed);
 
-        if (parsedInclude.isIncludeLine)
+        if (parsedInclude.isIncludeLine )
         {
           const File targetFile = findInclude (file, parsedInclude.filename);
 
@@ -560,7 +565,7 @@ private:
                   alreadyIncludedFiles.add (targetFile.getFullPathName());
                 }
 
-                dest << newLine << "/*** Start of inlined file: " << targetFile.getFileName() << " ***/" << newLine;
+                dest << newLine << "#line 3 \"" << targetFile.getFileName() << "\"" << newLine;
 
                 if (! parseFile (rootFolder, newTargetFile,
                   dest, targetFile, alreadyIncludedFiles, includesToIgnore,
@@ -568,8 +573,6 @@ private:
                 {
                   return false;
                 }
-
-                dest << "/*** End of inlined file: " << targetFile.getFileName() << " ***/" << newLine << newLine;
 
                 line = parsedInclude.lineAfterInclude;
               }
@@ -658,6 +661,8 @@ private:
 
       lastLineWasBlank = line.isEmpty();
     }
+
+    alreadyIncludedFiles.add( file.getFileName() );
 
     return true;
   }

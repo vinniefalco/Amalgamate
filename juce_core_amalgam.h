@@ -567,7 +567,7 @@ namespace juce
 #endif
 
 #if defined (_MSC_VER) && _MSC_VER >= 1600
- #if _MSC_VER >= 1700
+ #if _MSC_VER >= 1900
   #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 1
  #else
   #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 0
